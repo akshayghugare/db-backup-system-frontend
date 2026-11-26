@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { fetchConfig } from "../api/backup.js";
 import AuthLayout, { FormError } from "../components/AuthLayout.jsx";
 import { SpinnerIcon, UserIcon } from "../components/Icons.jsx";
-import { Field, PasswordInput } from "../components/ui.jsx";
+import { Alert, Field, PasswordInput } from "../components/ui.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,19 +59,19 @@ export default function RegisterPage() {
       footer={
         <>
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-accent hover:underline">
+          <Link to="/login" className="font-medium text-accent-soft hover:text-violet-200 hover:underline">
             Sign in
           </Link>
         </>
       }
     >
       {!enabled ? (
-        <p className="text-[13px] text-muted">
+        <Alert tone="warning">
           Registration is turned off on this server. Ask whoever runs it for an account, or set ALLOW_REGISTRATION=true in
           backend/.env.
-        </p>
+        </Alert>
       ) : (
-        <form onSubmit={submit} className="space-y-3" noValidate>
+        <form onSubmit={submit} className="space-y-4" noValidate>
           <FormError message={error} />
           <Field label="Name">
             <input
@@ -102,7 +102,7 @@ export default function RegisterPage() {
           <Field label="Confirm password">
             <PasswordInput value={form.confirm} onChange={set("confirm")} placeholder="Type it again" disabled={submitting} />
           </Field>
-          <button type="submit" className="btn-accent w-full" disabled={submitting}>
+          <button type="submit" className="btn-accent mt-2 h-11 w-full" disabled={submitting}>
             {submitting ? <SpinnerIcon /> : <UserIcon />}
             {submitting ? "Creating account…" : "Create account"}
           </button>

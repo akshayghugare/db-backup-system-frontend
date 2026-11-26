@@ -1,19 +1,95 @@
 @import "tailwindcss";
 
 @theme {
-  --color-page: #12141a;
-  --color-panel: #191c23;
-  --color-raised: #1f232b;
-  --color-field: #15181e;
-  --color-line: #2a2e37;
-  --color-line-strong: #353a45;
-  --color-ink: #eceef2;
-  --color-muted: #a7acb7;
-  --color-faint: #737985;
-  --color-accent: #f5a524;
-  --color-accent-strong: #e0901a;
+  /* Purple dark theme */
+  --color-page: #0b0814;
+  --color-panel: #141024;
+  --color-raised: #1d1733;
+  --color-field: #100c1e;
+  --color-line: #272042;
+  --color-line-strong: #392f5c;
+  --color-ink: #f3effe;
+  --color-muted: #b4abcf;
+  --color-faint: #7f769c;
+  --color-accent: #8b5cf6;
+  --color-accent-strong: #7c3aed;
+  --color-accent-soft: #b39dfb;
+  --color-glow: #d946ef;
+
   --font-sans: "Outfit", "Lexend", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --animate-fade-up: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.3s ease-out both;
+  --animate-scale-in: scale-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-slide-in-left: slide-in-left 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shake: shake 0.45s ease-in-out both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-stripes: stripes 0.9s linear infinite;
+  --animate-flow: flow 1.4s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
+  --animate-ping-slow: ping-slow 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-check: check-draw 0.5s 0.15s ease-out both;
+  --animate-indeterminate: indeterminate 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+
+  @keyframes indeterminate {
+    from { transform: translateX(-110%); }
+    to { transform: translateX(310%); }
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.96) translateY(6px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes slide-in-left {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(2px); }
+  }
+  @keyframes shimmer {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+  }
+  @keyframes stripes {
+    from { background-position: 0 0; }
+    to { background-position: 28px 0; }
+  }
+  @keyframes flow {
+    from { stroke-dashoffset: 24; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(18px, -22px) scale(1.06); }
+  }
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(139 92 246 / 0.45); }
+    50% { box-shadow: 0 0 0 8px rgb(139 92 246 / 0); }
+  }
+  @keyframes ping-slow {
+    0% { transform: scale(1); opacity: 0.6; }
+    80%, 100% { transform: scale(1.9); opacity: 0; }
+  }
+  @keyframes check-draw {
+    from { stroke-dashoffset: 24; }
+    to { stroke-dashoffset: 0; }
+  }
 }
 
 @layer base {
@@ -23,27 +99,125 @@
 
   body {
     @apply bg-page text-ink font-sans text-sm antialiased;
+    background-image:
+      radial-gradient(1100px 620px at 8% -12%, rgb(139 92 246 / 0.16), transparent 60%),
+      radial-gradient(900px 520px at 100% -5%, rgb(217 70 239 / 0.09), transparent 60%),
+      radial-gradient(900px 700px at 50% 120%, rgb(91 33 182 / 0.12), transparent 60%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: rgb(139 92 246 / 0.45);
+    color: #fff;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #3b3160 transparent;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-accent);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(167 139 250 / 0.8);
+    outline-offset: 2px;
   }
 }
 
 @layer components {
   .panel {
-    @apply rounded-lg border border-line bg-panel;
+    @apply rounded-2xl border border-line bg-panel/85 shadow-[0_10px_40px_-18px_rgb(0_0_0/0.8)] backdrop-blur-sm;
+  }
+
+  .panel-header {
+    @apply flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4;
   }
 
   .field {
-    @apply h-9 w-full rounded-md border border-line-strong bg-field px-2.5 text-[13px] text-ink outline-none transition-colors placeholder:text-faint focus:border-accent disabled:cursor-not-allowed disabled:opacity-60;
+    @apply h-10 w-full rounded-xl border border-line-strong bg-field/90 px-3 text-[13px] text-ink outline-none transition-all duration-200 placeholder:text-faint hover:border-[#4a3d75] focus:border-accent focus:ring-4 focus:ring-accent/15 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-accent {
-    @apply inline-flex h-[34px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-accent-strong bg-accent px-3 text-[13px] font-medium text-[#1b1405] transition-colors enabled:hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50;
+    @apply relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-xl bg-linear-to-r from-violet-600 via-purple-600 to-fuchsia-600 px-4 text-[13px] font-semibold text-white shadow-lg shadow-violet-950/60 ring-1 ring-inset ring-white/15 transition-all duration-200 enabled:hover:-translate-y-px enabled:hover:shadow-violet-700/40 enabled:hover:brightness-110 enabled:active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45 disabled:saturate-50;
   }
 
   .btn-ghost {
-    @apply inline-flex h-[34px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-line-strong bg-transparent px-3 text-[13px] font-medium text-muted transition-colors enabled:hover:bg-raised enabled:hover:text-ink disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-line-strong bg-raised/40 px-3.5 text-[13px] font-medium text-muted transition-all duration-200 enabled:hover:border-accent/50 enabled:hover:bg-accent/10 enabled:hover:text-ink disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-sm {
+    @apply h-8 rounded-lg px-2.5 text-xs;
+  }
+
+  .segmented {
+    @apply inline-flex rounded-xl border border-line-strong bg-field/80 p-1 text-xs;
+  }
+
+  .segmented > button {
+    @apply rounded-lg px-3 py-1.5 font-medium text-muted transition-all duration-200 hover:text-ink;
+  }
+
+  .segmented > button[aria-pressed="true"] {
+    @apply bg-linear-to-r from-violet-600/90 to-fuchsia-600/80 text-white shadow-md shadow-violet-950/50;
   }
 
   .tech {
     @apply font-mono text-[11px] text-faint;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-soft;
+  }
+
+  .gradient-text {
+    @apply bg-linear-to-r from-violet-300 via-fuchsia-300 to-purple-200 bg-clip-text text-transparent;
+  }
+
+  .data-table thead {
+    @apply bg-raised/70 text-left text-[11px] uppercase tracking-wider text-faint;
+  }
+
+  .data-table th {
+    @apply px-4 py-2.5 font-semibold;
+  }
+
+  .data-table td {
+    @apply px-4 py-3;
+  }
+
+  .data-table tbody tr {
+    @apply border-t border-line transition-colors duration-150;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-raised;
+  }
+
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 animate-shimmer bg-linear-to-r from-transparent via-white/[0.06] to-transparent;
+  }
+
+  .stagger > * {
+    @apply animate-fade-up;
+  }
+  .stagger > *:nth-child(2) { animation-delay: 60ms; }
+  .stagger > *:nth-child(3) { animation-delay: 120ms; }
+  .stagger > *:nth-child(4) { animation-delay: 180ms; }
+  .stagger > *:nth-child(5) { animation-delay: 240ms; }
+  .stagger > *:nth-child(6) { animation-delay: 300ms; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

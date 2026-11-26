@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import AuthLayout, { FormError } from "../components/AuthLayout.jsx";
 import { LockIcon, SpinnerIcon } from "../components/Icons.jsx";
-import { Field, PasswordInput } from "../components/ui.jsx";
+import { Alert, Field, PasswordInput } from "../components/ui.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function LoginPage() {
@@ -39,16 +39,14 @@ export default function LoginPage() {
       footer={
         <>
           No account yet?{" "}
-          <Link to="/register" className="font-medium text-accent hover:underline">
+          <Link to="/register" className="font-medium text-accent-soft hover:text-violet-200 hover:underline">
             Create one
           </Link>
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-3" noValidate>
-        {notice && !error && (
-          <p className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[13px] text-amber-400">{notice}</p>
-        )}
+      <form onSubmit={submit} className="space-y-4" noValidate>
+        {notice && !error && <Alert tone="warning">{notice}</Alert>}
         <FormError message={error} />
         <Field label="Email">
           <input
@@ -71,7 +69,7 @@ export default function LoginPage() {
             disabled={submitting}
           />
         </Field>
-        <button type="submit" className="btn-accent w-full" disabled={submitting}>
+        <button type="submit" className="btn-accent mt-2 h-11 w-full" disabled={submitting}>
           {submitting ? <SpinnerIcon /> : <LockIcon />}
           {submitting ? "Signing in…" : "Sign in"}
         </button>

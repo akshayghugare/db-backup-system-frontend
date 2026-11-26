@@ -137,3 +137,83 @@ export const HistoryIcon = make(
     <path d="M12 7v5l3 2" />
   </>
 );
+export const MenuIcon = make(
+  <>
+    <path d="M4 6h16" />
+    <path d="M4 12h16" />
+    <path d="M4 18h16" />
+  </>
+);
+export const CloseIcon = make(
+  <>
+    <path d="M18 6L6 18" />
+    <path d="M6 6l12 12" />
+  </>
+);
+export const ChevronDownIcon = make(<path d="M6 9l6 6 6-6" />);
+export const ChevronRightIcon = make(<path d="M9 6l6 6-6 6" />);
+export const CheckIcon = make(<path d="M5 12l5 5L20 7" />);
+export const ClockIcon = make(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </>
+);
+export const ServerIcon = make(
+  <>
+    <rect x="3" y="4" width="18" height="7" rx="2" />
+    <rect x="3" y="13" width="18" height="7" rx="2" />
+    <path d="M7 7.5h.01" />
+    <path d="M7 16.5h.01" />
+  </>
+);
+export const LayersIcon = make(
+  <>
+    <path d="M12 3l9 5-9 5-9-5 9-5z" />
+    <path d="M3 13l9 5 9-5" />
+  </>
+);
+export const ZapIcon = make(<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />);
+export const ActivityIcon = make(<path d="M22 12h-4l-3 9L9 3l-3 9H2" />);
+export const SearchIcon = make(
+  <>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M21 21l-4.3-4.3" />
+  </>
+);
+export const RefreshIcon = make(
+  <>
+    <path d="M21 12a9 9 0 0 1-15.5 6.2L3 16" />
+    <path d="M3 12a9 9 0 0 1 15.5-6.2L21 8" />
+    <path d="M21 3v5h-5" />
+    <path d="M3 21v-5h5" />
+  </>
+);
+export const SparklesIcon = make(
+  <>
+    <path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3z" />
+    <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z" />
+  </>
+);
+export const HourglassIcon = make(
+  <>
+    <path d="M6 2h12" />
+    <path d="M6 22h12" />
+    <path d="M7 2v4a5 5 0 0 0 10 0V2" />
+    <path d="M7 22v-4a5 5 0 0 1 10 0v4" />
+  </>
+);
+export const LinkIcon = make(
+  <>
+    <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+    <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+  </>
+);
+export const GridIcon = make(
+  <>
+    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+  </>
+);

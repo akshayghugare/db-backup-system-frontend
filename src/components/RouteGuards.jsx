@@ -1,14 +1,10 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext.jsx";
-import { SpinnerIcon } from "./Icons.jsx";
+import { BrandLoader } from "./ui.jsx";
 
 function FullPageSpinner() {
-  return (
-    <div className="flex min-h-screen items-center justify-center gap-2 text-[13px] text-muted">
-      <SpinnerIcon className="text-accent" /> Checking your session…
-    </div>
-  );
+  return <BrandLoader label="Checking your session" />;
 }
 
 export function ProtectedRoute() {
