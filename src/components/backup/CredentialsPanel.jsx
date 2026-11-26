@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { testConnection } from "../../api/backup.js";
 import { isRestoreHostAllowed, parseConnectionUrl, toPayload, validateCredentials } from "../../utils/format.js";
-import { AlertIcon, CheckCircleIcon, DownloadIcon, LinkIcon, PlugIcon, SpinnerIcon, UploadIcon, XCircleIcon } from "../Icons.jsx";
+import { AlertIcon, CheckCircleIcon, CheckIcon, DownloadIcon, LinkIcon, PlugIcon, ServerIcon, SpinnerIcon, UploadIcon, XCircleIcon } from "../Icons.jsx";
+import DesktopDownloadButton from "../DesktopDownload.jsx";
 import { Field, PasswordInput, SectionHeader, Toggle } from "../ui.jsx";
 
 const SIDE_TEXT = {
@@ -22,7 +23,7 @@ const SIDE_TEXT = {
     step: "2",
     label: "Restore TO",
     title: "Restore TO",
-    kicker: "Destination · localhost only",
+    kicker: "Destination · local database",
     subtitle:
       "The database that receives the copy. Everything already in it is REPLACED. It must already exist and can be completely empty.",
     hostExample: "e.g. localhost",
@@ -31,13 +32,107 @@ const SIDE_TEXT = {
     chip: "bg-fuchsia-500/10 text-fuchsia-300 ring-fuchsia-400/30",
     icon: <DownloadIcon size={12} />,
   },
+  // Restore TO a deployed server (staging, production…).
+  toRemote: {
+    step: "2",
+    label: "Restore TO",
+    title: "Restore TO",
+    kicker: "Destination · deployed database",
+    subtitle:
+      "A database on a server (staging, production…). Everything already in it is REPLACED — apps using it see the new data immediately. It must already exist.",
+    hostExample: "e.g. staging-db.example.com",
+    nameExample: "e.g. rlkdb_staging",
+    bar: "from-rose-500 via-orange-400 to-rose-500",
+    chip: "bg-rose-500/10 text-rose-300 ring-rose-400/30",
+    icon: <DownloadIcon size={12} />,
+  },
 };
 
-export default function CredentialsPanel({ side, form, onChange, disabled, hostWarning, restoreNotLocalMessage }) {
-  const text = SIDE_TEXT[side];
+const TARGETS = [
+  { value: "local", title: "Local database", text: "A database on this computer (localhost). Safe for development.", icon: <DownloadIcon size={16} /> },
+  { value: "remote", title: "Deployed database", text: "Staging, production or any other server. Replaces its data.", icon: <ServerIcon size={16} /> },
+];
+
+/** "Local database" / "Deployed database" choice for Restore TO. */
+function TargetSelector({ target, onChange, disabled, localUnavailableMessage }) {
+  return (
+    <div className="@container space-y-2">
+      <p className="text-[12.5px] font-medium text-muted">Restore into</p>
+      <div className="grid gap-2 @lg:grid-cols-2" role="radiogroup" aria-label="Restore into">
+        {TARGETS.map((option) => {
+          const active = target === option.value;
+          const remote = option.value === "remote";
+          const box = active
+            ? remote
+              ? "border-rose-500/55 bg-rose-500/[0.08] shadow-[0_0_0_4px_rgb(244_63_94/0.08)]"
+              : "border-violet-500/55 bg-violet-500/[0.10] shadow-[0_0_0_4px_rgb(139_92_246/0.08)]"
+            : "border-line bg-field/40 hover:border-line-strong";
+          const tile = active
+            ? remote
+              ? "bg-rose-500/20 text-rose-200"
+              : "bg-linear-to-br from-violet-600 to-fuchsia-600 text-white"
+            : "bg-raised text-faint";
+          const dot = active ? (remote ? "border-transparent bg-rose-500 text-white" : "border-transparent bg-accent text-white") : "border-line-strong";
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={disabled}
+              onClick={() => onChange(option.value)}
+              className={"group relative flex items-start gap-3 rounded-xl border p-3 text-left transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 " + box}
+            >
+              <span className={"inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg " + tile}>{option.icon}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] font-semibold text-ink">{option.title}</span>
+                <span className="mt-0.5 block text-[11.5px] leading-snug text-faint">{option.text}</span>
+              </span>
+              <span className={"mt-0.5 inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border " + dot}>
+                {active && <CheckIcon size={10} />}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {target === "local" && localUnavailableMessage && (
+        <div className="animate-fade-in rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2.5 text-[12px] leading-relaxed text-amber-200">
+          {localUnavailableMessage}
+          <div className="mt-2">
+            <DesktopDownloadButton variant="link" label="Get the desktop app" />
+          </div>
+        </div>
+      )}
+      {target === "remote" && (
+        <p className="flex animate-fade-in items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-3 py-2.5 text-[12px] leading-relaxed text-rose-200">
+          <AlertIcon className="mt-0.5 shrink-0 text-rose-400" />
+          Restoring into a deployed database replaces its data for everyone using it. Double-check the host and database name — you
+          will be asked to confirm before it runs.
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default function CredentialsPanel({
+  side,
+  form,
+  onChange,
+  disabled,
+  hostWarning,
+  restoreNotLocalMessage,
+  target = "local",
+  onTargetChange,
+  localUnavailableMessage,
+}) {
+  const remote = side === "to" && target === "remote";
+  const text = remote ? SIDE_TEXT.toRemote : SIDE_TEXT[side];
   const [url, setUrl] = useState("");
   const [urlError, setUrlError] = useState(null);
   const [status, setStatus] = useState(null);
+
+  // A previous test result does not apply to the other kind of target.
+  useEffect(() => setStatus(null), [target]);
 
   const update = (patch) => {
     setStatus(null);
@@ -62,13 +157,17 @@ export default function CredentialsPanel({ side, form, onChange, disabled, hostW
       setStatus({ kind: "fail", text: problem });
       return;
     }
-    if (side === "to" && !isRestoreHostAllowed(form.DB_HOST)) {
+    if (side === "to" && target === "local" && !isRestoreHostAllowed(form.DB_HOST)) {
       setStatus({ kind: "fail", text: restoreNotLocalMessage });
+      return;
+    }
+    if (remote && isRestoreHostAllowed(form.DB_HOST)) {
+      setStatus({ kind: "fail", text: "This host is this computer. Choose \"Local database\" for it." });
       return;
     }
     setStatus({ kind: "busy", text: "Connecting…" });
     try {
-      const data = await testConnection(side, toPayload(form));
+      const data = await testConnection(side, toPayload(form), target);
       const contents =
         side === "to"
           ? data.empty
@@ -81,7 +180,8 @@ export default function CredentialsPanel({ side, form, onChange, disabled, hostW
     }
   };
 
-  const complete = !validateCredentials(form, text.label) && (side === "from" || isRestoreHostAllowed(form.DB_HOST));
+  const complete =
+    !validateCredentials(form, text.label) && (side === "from" || (remote ? !isRestoreHostAllowed(form.DB_HOST) : isRestoreHostAllowed(form.DB_HOST)));
 
   const statusStyle =
     status?.kind === "ok"
@@ -114,6 +214,9 @@ export default function CredentialsPanel({ side, form, onChange, disabled, hostW
         }
       />
       <div className="flex-1 space-y-4 p-5">
+        {side === "to" && onTargetChange && (
+          <TargetSelector target={target} onChange={onTargetChange} disabled={disabled} localUnavailableMessage={localUnavailableMessage} />
+        )}
         <div className="space-y-1.5">
           <div className="flex gap-2">
             <span className="relative block flex-1">

@@ -8,7 +8,9 @@ export class ApiError extends Error {
   }
 }
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
+// Only an absolute http(s) URL counts; anything else (empty, "/", a mangled value) means "same origin as the page".
+const RAW_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
+export const API_BASE_URL = /^https?:\/\//i.test(RAW_API_BASE_URL) ? RAW_API_BASE_URL : "";
 
 const UNREACHABLE = `Could not reach the API${API_BASE_URL ? ` at ${API_BASE_URL}` : ""}. Check that the backend is running (npm start in db-backup-local/backend) and that VITE_API_BASE_URL in frontend/.env is correct.`;
 

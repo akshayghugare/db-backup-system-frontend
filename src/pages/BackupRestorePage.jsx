@@ -52,7 +52,7 @@ function FlowEndpoint({ tone, label, name, host, note }) {
   );
 }
 
-function FlowHero({ from, to, mode, selectedCount, running, percent }) {
+function FlowHero({ from, to, mode, selectedCount, running, percent, restoreTarget }) {
   const host = (form) => (form.DB_HOST.trim() ? `${form.DB_HOST.trim()}:${form.DB_PORT}` : "");
   return (
     <section className="panel relative mb-6 animate-fade-up overflow-hidden p-4 sm:p-5">
@@ -97,7 +97,13 @@ function FlowHero({ from, to, mode, selectedCount, running, percent }) {
           </span>
         </div>
 
-        <FlowEndpoint tone="to" label="Restore TO · gets replaced" name={to.DB_NAME.trim()} host={host(to)} note="Local destination" />
+        <FlowEndpoint
+          tone="to"
+          label={restoreTarget === "remote" ? "Restore TO · deployed · gets replaced" : "Restore TO · local · gets replaced"}
+          name={to.DB_NAME.trim()}
+          host={host(to)}
+          note={restoreTarget === "remote" ? "Deployed destination" : "Local destination"}
+        />
       </div>
     </section>
   );
@@ -155,6 +161,9 @@ function BackupRestoreWorkspace() {
   const [now, setNow] = useState(Date.now());
   const [notLocalMessage, setNotLocalMessage] = useState(DEFAULT_NOT_LOCAL);
   const [restoreUnavailable, setRestoreUnavailable] = useState(null);
+  // Where Restore TO points: "local" (localhost) or "remote" (a deployed database such as staging / production).
+  const [restoreTarget, setRestoreTarget] = useState("local");
+  const [remoteAck, setRemoteAck] = useState(false);
   const pollRef = useRef(null);
   const statusRef = useRef(null);
 
@@ -168,7 +177,8 @@ function BackupRestoreWorkspace() {
     fetchConfig()
       .then((config) => {
         setNotLocalMessage(config.restore_not_local_message);
-        setRestoreUnavailable(config.restore_available === false ? config.restore_unavailable_message : null);
+        const local = config.restore_targets?.local ?? { available: config.restore_available !== false, message: config.restore_unavailable_message };
+        setRestoreUnavailable(local.available === false ? local.message : null);
       })
       .catch(() => undefined);
     getActiveJob()
@@ -184,6 +194,15 @@ function BackupRestoreWorkspace() {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [running]);
+
+  useEffect(() => setRemoteAck(false), [restoreTarget, to.DB_HOST, to.DB_PORT, to.DB_NAME]);
+
+  const changeTarget = (next) => {
+    if (next === restoreTarget) return;
+    setRestoreTarget(next);
+    // Deployed databases almost always need SSL; a local one usually does not.
+    setTo((current) => ({ ...current, DB_SSL: next === "remote" }));
+  };
 
   // Show progress in the browser tab title while a copy runs.
   useEffect(() => {
@@ -215,6 +234,7 @@ function BackupRestoreWorkspace() {
             setTo((prev) => ({ ...prev, DB_PASSWORD: "" }));
             setConfirmName("");
             setOverwrite(false);
+            setRemoteAck(false);
           }
           return;
         }
@@ -264,7 +284,17 @@ function BackupRestoreWorkspace() {
   const required = useMemo(() => requiredParents(tablesState.data?.tables ?? [], selected), [tablesState.data, selected]);
 
   const destinationName = to.DB_NAME.trim();
-  const hostWarning = to.DB_HOST.trim() !== "" && !isRestoreHostAllowed(to.DB_HOST) ? notLocalMessage : null;
+  const REMOTE_IS_LOCAL = 'This host is this computer. Choose "Local database" for it, or enter the deployed server\'s host.';
+  const hostWarning =
+    to.DB_HOST.trim() === ""
+      ? null
+      : restoreTarget === "remote"
+        ? isRestoreHostAllowed(to.DB_HOST)
+          ? REMOTE_IS_LOCAL
+          : null
+        : isRestoreHostAllowed(to.DB_HOST)
+          ? null
+          : notLocalMessage;
 
   const problems = useMemo(() => {
     const sameHost = (a, b) => {
@@ -272,7 +302,15 @@ function BackupRestoreWorkspace() {
       return local(a.trim().toLowerCase()) === local(b.trim().toLowerCase());
     };
     const fromProblem = validateCredentials(from, "Backup FROM");
-    const toProblem = validateCredentials(to, "Restore TO") || (isRestoreHostAllowed(to.DB_HOST) ? null : notLocalMessage);
+    const toProblem =
+      validateCredentials(to, "Restore TO") ||
+      (restoreTarget === "remote"
+        ? isRestoreHostAllowed(to.DB_HOST)
+          ? REMOTE_IS_LOCAL
+          : null
+        : !isRestoreHostAllowed(to.DB_HOST)
+          ? notLocalMessage
+          : restoreUnavailable);
     const sameProblem =
       sameHost(from.DB_HOST, to.DB_HOST) && Number(from.DB_PORT) === Number(to.DB_PORT) && from.DB_NAME.trim() === destinationName
         ? "Backup FROM and Restore TO are the same database — choose a different destination"
@@ -281,18 +319,19 @@ function BackupRestoreWorkspace() {
       (mode === "SELECTED" && !tablesState.data ? "Load the table list and pick the tables to copy" : null) ||
       (mode === "SELECTED" && selected.size === 0 ? "Select at least one table, or choose All tables" : null);
     return { fromProblem, toProblem, sameProblem, tablesProblem };
-  }, [from, to, destinationName, notLocalMessage, mode, tablesState.data, selected]);
+  }, [from, to, destinationName, notLocalMessage, mode, tablesState.data, selected, restoreTarget, restoreUnavailable]);
 
   const formError = problems.fromProblem || problems.toProblem || problems.sameProblem || problems.tablesProblem;
   const confirmed = destinationName !== "" && confirmName.trim() === destinationName;
-  const canStart = !formError && confirmed && !locked && !busyBy;
+  const canStart = !formError && confirmed && (restoreTarget === "local" || remoteAck) && !locked && !busyBy;
 
   const checklist = [
     { label: "Source database details", ok: !problems.fromProblem },
-    { label: "Local destination details", ok: !problems.toProblem },
+    { label: restoreTarget === "remote" ? "Deployed destination details" : "Local destination details", ok: !problems.toProblem },
     { label: "Source and destination differ", ok: !problems.fromProblem && !problems.toProblem && !problems.sameProblem },
     { label: mode === "FULL" ? "Copy all tables" : "Tables selected", ok: !problems.tablesProblem },
     { label: "Destination name confirmed", ok: confirmed },
+    ...(restoreTarget === "remote" ? [{ label: "Deployed restore confirmed", ok: remoteAck }] : []),
   ];
 
   const selectionSummary = `Data for ${formatNumber(selected.size)} selected table${selected.size === 1 ? "" : "s"}${
@@ -308,6 +347,8 @@ function BackupRestoreWorkspace() {
         from: toPayload(from),
         to: toPayload(to),
         overwrite_destination: overwrite,
+        restore_target: restoreTarget,
+        confirm_remote_restore: restoreTarget === "remote" && remoteAck,
         confirm_destination_name: confirmName.trim(),
         mode,
         selected_tables:
@@ -354,18 +395,18 @@ function BackupRestoreWorkspace() {
     >
       {running && <TopProgress percent={percent} />}
 
-      {restoreUnavailable && (
+      {restoreUnavailable && restoreTarget === "local" && (
         <Alert tone="warning" className="mb-6">
           <p className="font-semibold text-amber-100">Restore TO your local database is not possible from this server</p>
           <p className="mt-1 text-amber-200/90">{restoreUnavailable}</p>
           <p className="mt-2 text-amber-200/90">
-            Use the <strong>desktop app</strong> instead — the same app with the same account and history, running on your computer.
+            Use the <strong>desktop app</strong> for local restores — the same app with the same account and history, running on your computer.
           </p>
           <DesktopDownloadButton variant="primary" label="Download desktop app" className="mt-3" />
         </Alert>
       )}
 
-      <FlowHero from={from} to={to} mode={mode} selectedCount={selected.size} running={running} percent={percent} />
+      <FlowHero from={from} to={to} mode={mode} selectedCount={selected.size} running={running} percent={percent} restoreTarget={restoreTarget} />
 
       {showStatus && (
         <div ref={statusRef} className="mb-6 scroll-mt-24">
@@ -386,6 +427,9 @@ function BackupRestoreWorkspace() {
               disabled={locked}
               hostWarning={hostWarning}
               restoreNotLocalMessage={notLocalMessage}
+              target={restoreTarget}
+              onTargetChange={changeTarget}
+              localUnavailableMessage={restoreUnavailable}
             />
           </div>
 
@@ -457,6 +501,30 @@ function BackupRestoreWorkspace() {
                 </span>
               </Field>
 
+              {restoreTarget === "remote" && (
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-[12.5px] transition-all ${
+                    remoteAck ? "border-rose-500/50 bg-rose-500/[0.10]" : "border-rose-500/30 bg-rose-500/[0.05] hover:border-rose-500/45"
+                  } ${locked ? "cursor-not-allowed opacity-60" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={remoteAck}
+                    onChange={(e) => setRemoteAck(e.target.checked)}
+                    disabled={locked || !destinationName}
+                    className="mt-0.5 h-4 w-4 accent-rose-500"
+                  />
+                  <span>
+                    <span className="block font-semibold text-rose-200">This is a deployed database</span>
+                    <span className="mt-0.5 block text-[11.5px] leading-relaxed text-rose-200/70">
+                      I understand this replaces the data in <strong className="text-rose-100">{toLabel}</strong>
+                      {to.DB_HOST.trim() ? <> on <strong className="text-rose-100">{to.DB_HOST.trim()}</strong></> : null} — everyone using it
+                      will see the copied data.
+                    </span>
+                  </span>
+                </label>
+              )}
+
               {warning && !running && (
                 <p key={warning} className="flex animate-fade-in items-start gap-2 text-[12px] text-amber-300">
                   <AlertIcon size={13} className="mt-px shrink-0" /> {warning}
@@ -469,7 +537,7 @@ function BackupRestoreWorkspace() {
 
               <button type="button" onClick={() => setReviewing(true)} disabled={!canStart} className="btn-accent h-12 w-full text-[14px]">
                 {locked ? <SpinnerIcon size={16} /> : <DatabaseIcon size={16} />}
-                {starting ? "Starting…" : running ? `Running… ${percent}%` : "Backup & Restore"}
+                {starting ? "Starting…" : running ? `Running… ${percent}%` : restoreTarget === "remote" ? "Backup & Restore to deployed DB" : "Backup & Restore"}
               </button>
             </div>
           </section>
@@ -485,6 +553,7 @@ function BackupRestoreWorkspace() {
           from={from}
           to={to}
           overwrite={overwrite}
+          restoreTarget={restoreTarget}
           mode={mode}
           selectionSummary={selectionSummary}
           onCancel={() => setReviewing(false)}

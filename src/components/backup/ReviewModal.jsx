@@ -1,12 +1,14 @@
 import { useEffect, useRef } from "react";
 
-import { AlertIcon, DatabaseIcon, DownloadIcon, UploadIcon } from "../Icons.jsx";
+import { AlertIcon, DatabaseIcon, DownloadIcon, ServerIcon, UploadIcon } from "../Icons.jsx";
 
 function Endpoint({ tone, icon, role, name, host }) {
   const styles =
     tone === "from"
       ? "border-sky-500/30 bg-sky-500/[0.06] text-sky-300"
-      : "border-fuchsia-500/30 bg-fuchsia-500/[0.06] text-fuchsia-300";
+      : tone === "remote"
+        ? "border-rose-500/40 bg-rose-500/[0.08] text-rose-300"
+        : "border-fuchsia-500/30 bg-fuchsia-500/[0.06] text-fuchsia-300";
   return (
     <div className={`min-w-0 flex-1 rounded-xl border p-3 ${styles}`}>
       <p className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider">
@@ -18,7 +20,8 @@ function Endpoint({ tone, icon, role, name, host }) {
   );
 }
 
-export default function ReviewModal({ from, to, overwrite, mode, selectionSummary, onCancel, onConfirm }) {
+export default function ReviewModal({ from, to, overwrite, restoreTarget = "local", mode, selectionSummary, onCancel, onConfirm }) {
+  const remote = restoreTarget === "remote";
   const cancelRef = useRef(null);
 
   useEffect(() => {
@@ -67,9 +70,24 @@ export default function ReviewModal({ from, to, overwrite, mode, selectionSummar
                 <path d="M0 6 H36" stroke="#a78bfa" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" className="animate-flow" />
               </svg>
             </span>
-            <Endpoint tone="to" icon={<DownloadIcon size={11} />} role="Restore TO" name={toLabel} host={`${to.DB_HOST.trim()}:${to.DB_PORT}`} />
+            <Endpoint
+              tone={remote ? "remote" : "to"}
+              icon={remote ? <ServerIcon size={11} /> : <DownloadIcon size={11} />}
+              role={remote ? "Restore TO · deployed" : "Restore TO · local"}
+              name={toLabel}
+              host={`${to.DB_HOST.trim()}:${to.DB_PORT}`}
+            />
           </div>
 
+          {remote && (
+            <p className="flex items-start gap-2 rounded-xl border border-rose-500/45 bg-rose-500/[0.10] px-3.5 py-2.5 text-[12.5px] font-medium text-rose-100">
+              <AlertIcon className="mt-0.5 shrink-0 text-rose-400" />
+              <span>
+                This is a <strong>deployed database</strong> on {to.DB_HOST.trim()}. Apps and people using it will see the copied data as soon
+                as the run finishes.
+              </span>
+            </p>
+          )}
           {mode === "SELECTED" && (
             <p className="rounded-xl border border-violet-500/25 bg-violet-500/[0.07] px-3.5 py-2.5 text-[12.5px] text-violet-100">{selectionSummary}</p>
           )}
@@ -92,11 +110,17 @@ export default function ReviewModal({ from, to, overwrite, mode, selectionSummar
           </button>
           <button
             type="button"
-            className={`btn-accent ${overwrite ? "from-rose-600 via-pink-600 to-fuchsia-600" : ""}`}
+            className={`btn-accent ${overwrite || remote ? "from-rose-600 via-pink-600 to-fuchsia-600" : ""}`}
             onClick={onConfirm}
           >
             <DatabaseIcon />
-            {overwrite ? `Replace ${toLabel} and copy` : "Copy now"}
+            {remote
+              ? overwrite
+                ? `Replace ${toLabel} on ${to.DB_HOST.trim()}`
+                : `Copy into ${toLabel} on ${to.DB_HOST.trim()}`
+              : overwrite
+                ? `Replace ${toLabel} and copy`
+                : "Copy now"}
           </button>
         </div>
       </div>

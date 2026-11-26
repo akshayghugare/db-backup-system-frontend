@@ -1,19 +1,24 @@
-/**
- * Desktop app download.
- *
- * The installer (~120 MB) is published as a GitHub Release asset — too big for the website repo / Render
- * (GitHub rejects files over 100 MB in git). "releases/latest/download/<file>" always points to the newest
- * release, so this link never needs to change when you ship a new version.
- *
- * Publish a release from db-backup-system-desktop with:  npm run release   (see its README).
- * The repository must be PUBLIC, otherwise visitors cannot download the file.
- */
-export const DESKTOP_RELEASES_URL = "https://github.com/akshayghugare/db-backup-system-desktop/releases";
-export const DESKTOP_DOWNLOAD_URL = `${DESKTOP_RELEASES_URL}/latest/download/DB-Backup-Restore-Setup.exe`;
+import { API_BASE_URL } from "../api/client.js";
 
-export const DESKTOP_INFO = {
-  platform: "Windows 10 / 11 · 64-bit",
-  size: "about 120 MB",
+/**
+ * Desktop app download — served directly by this website's backend (GET /api/desktop/download),
+ * so visitors download the installer from this site and never visit GitHub.
+ * The backend streams the newest installer published from db-backup-system-desktop (`npm run release`).
+ */
+export const DESKTOP_DOWNLOAD_URL = `${API_BASE_URL}/api/desktop/download`;
+export const DESKTOP_FILE_NAME = "DB-Backup-Restore-Setup.exe";
+export const DESKTOP_PLATFORM = "Windows 10 / 11 · 64-bit";
+
+/** Asks the backend whether an installer is published, and its size. */
+export const checkDesktopDownload = async () => {
+  try {
+    const response = await fetch(DESKTOP_DOWNLOAD_URL, { method: "HEAD", cache: "no-store" });
+    if (!response.ok) return { available: false };
+    const bytes = Number(response.headers.get("content-length")) || null;
+    return { available: true, bytes };
+  } catch {
+    return { available: false, unreachable: true };
+  }
 };
 
 /** True inside the desktop app itself (Electron adds "Electron/x.y" to the user agent). */

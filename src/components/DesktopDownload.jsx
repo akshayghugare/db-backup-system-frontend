@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
-import { DESKTOP_DOWNLOAD_URL, DESKTOP_INFO, DESKTOP_RELEASES_URL, isDesktopApp, isWindows } from "../config/desktop.js";
-import { AlertIcon, CheckIcon, CloseIcon, DatabaseIcon, DownloadIcon, LockIcon, ServerIcon, ShieldIcon, UserIcon } from "./Icons.jsx";
+import { checkDesktopDownload, DESKTOP_DOWNLOAD_URL, DESKTOP_FILE_NAME, DESKTOP_PLATFORM, isDesktopApp, isWindows } from "../config/desktop.js";
+import { formatBytes } from "../utils/format.js";
+import { AlertIcon, CheckIcon, CloseIcon, DatabaseIcon, DownloadIcon, LockIcon, ServerIcon, ShieldIcon, SpinnerIcon, UserIcon } from "./Icons.jsx";
 
 const STEPS = [
-  { icon: <DownloadIcon size={14} />, title: "Download the installer", text: "DB-Backup-Restore-Setup.exe — it saves to your Downloads folder." },
+  { icon: <DownloadIcon size={14} />, title: "Download the installer", text: `${DESKTOP_FILE_NAME} — it saves to your Downloads folder.` },
   {
     icon: <ShieldIcon size={14} />,
     title: "Run it and install",
@@ -20,8 +21,21 @@ const STEPS = [
 
 function DesktopDownloadModal({ onClose }) {
   const [started, setStarted] = useState(false);
+  const [file, setFile] = useState({ status: "checking", bytes: null });
   const closeRef = useRef(null);
   const windows = isWindows();
+
+  // Ask the backend whether an installer is published (and how big it is) before offering the button.
+  useEffect(() => {
+    let cancelled = false;
+    checkDesktopDownload().then((result) => {
+      if (!cancelled) setFile({ status: result.available ? "available" : "unavailable", bytes: result.bytes ?? null });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const available = file.status === "available";
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -112,18 +126,21 @@ function DesktopDownloadModal({ onClose }) {
             })}
           </ol>
 
+          {file.status === "unavailable" && (
+            <p className="flex animate-fade-up items-start gap-2 rounded-xl border border-amber-500/35 bg-amber-500/[0.07] px-3.5 py-2.5 text-[12.5px] text-amber-200">
+              <AlertIcon className="mt-0.5 shrink-0 text-amber-400" />
+              The desktop app has not been published yet, so it can't be downloaded right now. Please ask your admin and try again later.
+            </p>
+          )}
+
           {started && (
             <p className="flex animate-fade-up items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.07] px-3.5 py-2.5 text-[12.5px] text-emerald-200">
               <CheckIcon className="mt-0.5 shrink-0 text-emerald-400" />
               <span>
-                Your download has started. When it finishes, open <strong>DB-Backup-Restore-Setup.exe</strong> from your Downloads.
-                Nothing happening?{" "}
+                Your download has started — your browser shows its progress. When it finishes, open <strong>{DESKTOP_FILE_NAME}</strong> from
+                your Downloads. Nothing happening?{" "}
                 <a href={DESKTOP_DOWNLOAD_URL} className="font-semibold underline underline-offset-2 hover:text-white">
                   Download again
-                </a>{" "}
-                or{" "}
-                <a href={DESKTOP_RELEASES_URL} target="_blank" rel="noreferrer" className="font-semibold underline underline-offset-2 hover:text-white">
-                  open the releases page
                 </a>
                 .
               </span>
@@ -133,16 +150,24 @@ function DesktopDownloadModal({ onClose }) {
 
         <div className="relative flex flex-wrap items-center justify-between gap-3 border-t border-line bg-raised/30 px-6 py-4">
           <span className="flex items-center gap-1.5 text-[11.5px] text-faint">
-            <LockIcon size={11} /> {DESKTOP_INFO.platform} · {DESKTOP_INFO.size}
+            <LockIcon size={11} /> {DESKTOP_PLATFORM}
+            {file.bytes ? ` · ${formatBytes(file.bytes)}` : ""}
           </span>
           <span className="flex gap-2">
             <button type="button" className="btn-ghost" onClick={onClose}>
               {started ? "Done" : "Cancel"}
             </button>
-            <a href={DESKTOP_DOWNLOAD_URL} onClick={() => setStarted(true)} className="btn-accent no-underline" rel="noreferrer">
-              <DownloadIcon size={15} />
-              {started ? "Download again" : "Download for Windows"}
-            </a>
+            {available ? (
+              <a href={DESKTOP_DOWNLOAD_URL} download={DESKTOP_FILE_NAME} onClick={() => setStarted(true)} className="btn-accent no-underline">
+                <DownloadIcon size={15} />
+                {started ? "Download again" : "Download for Windows"}
+              </a>
+            ) : (
+              <button type="button" className="btn-accent" disabled>
+                {file.status === "checking" ? <SpinnerIcon size={15} /> : <DownloadIcon size={15} />}
+                {file.status === "checking" ? "Checking…" : "Not available yet"}
+              </button>
+            )}
           </span>
         </div>
       </div>

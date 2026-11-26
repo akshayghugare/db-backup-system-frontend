@@ -1,13 +1,27 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 import { listHistory } from "../../api/backup.js";
-import { formatBytes, formatDuration, formatNumber } from "../../utils/format.js";
+import { formatBytes, formatDuration, formatNumber, isRestoreHostAllowed } from "../../utils/format.js";
 import { ChevronDownIcon, ChevronRightIcon, HistoryIcon, SearchIcon, SpinnerIcon } from "../Icons.jsx";
 import { Avatar, EmptyState, SkeletonRows, StatusPill } from "../ui.jsx";
 
 const PAGE_SIZE = 10;
 
 const endpoint = (side) => `${side.host}:${side.port}`;
+
+/** Local vs deployed destination, worked out from the stored Restore TO host. */
+function TargetBadge({ host }) {
+  const local = isRestoreHostAllowed(String(host || ""));
+  return (
+    <span
+      className={`ml-1.5 inline-flex rounded px-1 py-px align-middle text-[9.5px] font-bold uppercase tracking-wider ring-1 ring-inset ${
+        local ? "bg-violet-500/10 text-violet-300 ring-violet-400/30" : "bg-rose-500/10 text-rose-300 ring-rose-400/35"
+      }`}
+    >
+      {local ? "Local" : "Deployed"}
+    </span>
+  );
+}
 
 function Detail({ label, children }) {
   return (
@@ -31,6 +45,7 @@ function EntryDetails({ entry }) {
       </Detail>
       <Detail label="Restore TO">
         <span className="font-semibold text-fuchsia-200">{entry.restore_to.database}</span>
+        <TargetBadge host={entry.restore_to.host} />
         <span className="block text-xs text-faint">
           {endpoint(entry.restore_to)}
           {entry.restore_to.server_version && ` · PostgreSQL ${entry.restore_to.server_version}`}
@@ -245,6 +260,7 @@ export default function HistoryPanel({ refreshKey }) {
                         <span className="text-accent-soft">→</span>
                         <span>
                           <span className="font-semibold text-fuchsia-200">{entry.restore_to.database}</span>
+                          <TargetBadge host={entry.restore_to.host} />
                           <span className="block font-mono text-[10.5px] text-faint">{endpoint(entry.restore_to)}</span>
                         </span>
                       </span>

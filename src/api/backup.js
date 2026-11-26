@@ -2,8 +2,9 @@ import { requestJson } from "./client.js";
 
 export const fetchConfig = async () => (await requestJson("/api/config", { auth: false })).data;
 
-export const testConnection = async (side, credentials) =>
-  (await requestJson("/api/test-connection", { method: "POST", body: { side, credentials } })).data;
+/** target ("local" | "remote") only matters for side "to" — where Restore TO points. */
+export const testConnection = async (side, credentials, target = "local") =>
+  (await requestJson("/api/test-connection", { method: "POST", body: { side, credentials, restore_target: target } })).data;
 
 export const listTables = async (credentials) =>
   (await requestJson("/api/tables", { method: "POST", body: { credentials } })).data;
