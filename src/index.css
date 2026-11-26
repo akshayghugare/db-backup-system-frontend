@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-page: #12141a;
+  --color-panel: #191c23;
+  --color-raised: #1f232b;
+  --color-field: #15181e;
+  --color-line: #2a2e37;
+  --color-line-strong: #353a45;
+  --color-ink: #eceef2;
+  --color-muted: #a7acb7;
+  --color-faint: #737985;
+  --color-accent: #f5a524;
+  --color-accent-strong: #e0901a;
+  --font-sans: "Outfit", "Lexend", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-page text-ink font-sans text-sm antialiased;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-lg border border-line bg-panel;
+  }
+
+  .field {
+    @apply h-9 w-full rounded-md border border-line-strong bg-field px-2.5 text-[13px] text-ink outline-none transition-colors placeholder:text-faint focus:border-accent disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-accent {
+    @apply inline-flex h-[34px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-accent-strong bg-accent px-3 text-[13px] font-medium text-[#1b1405] transition-colors enabled:hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex h-[34px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-line-strong bg-transparent px-3 text-[13px] font-medium text-muted transition-colors enabled:hover:bg-raised enabled:hover:text-ink disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .tech {
+    @apply font-mono text-[11px] text-faint;
+  }
+}
