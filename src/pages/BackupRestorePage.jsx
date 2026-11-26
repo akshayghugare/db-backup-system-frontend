@@ -9,6 +9,7 @@ import ReviewModal from "../components/backup/ReviewModal.jsx";
 import TablePicker, { requiredParents } from "../components/backup/TablePicker.jsx";
 import { AlertIcon, CheckIcon, DatabaseIcon, DownloadIcon, LockIcon, SpinnerIcon, UploadIcon } from "../components/Icons.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
+import DesktopDownloadButton from "../components/DesktopDownload.jsx";
 import PendingApproval from "../components/PendingApproval.jsx";
 import { Alert, Field, StepBadge } from "../components/ui.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -357,6 +358,10 @@ function BackupRestoreWorkspace() {
         <Alert tone="warning" className="mb-6">
           <p className="font-semibold text-amber-100">Restore TO your local database is not possible from this server</p>
           <p className="mt-1 text-amber-200/90">{restoreUnavailable}</p>
+          <p className="mt-2 text-amber-200/90">
+            Use the <strong>desktop app</strong> instead — the same app with the same account and history, running on your computer.
+          </p>
+          <DesktopDownloadButton variant="primary" label="Download desktop app" className="mt-3" />
         </Alert>
       )}
 

@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { ChevronRightIcon, CloseIcon, DatabaseIcon, LogOutIcon, MenuIcon, ShieldIcon, UsersIcon } from "../Icons.jsx";
 import { Avatar, BrandMark } from "../ui.jsx";
 import UserMenu from "../UserMenu.jsx";
+import DesktopDownloadButton from "../DesktopDownload.jsx";
 
 export const USERS_CHANGED_EVENT = "db-backup-local:users-changed";
 
@@ -52,7 +53,10 @@ export function UserLayout({ title, subtitle, actions, busy = false, children })
               <DatabaseIcon /> Workspace
             </span>
           </div>
-          <UserMenu disabled={busy} />
+          <div className="flex items-center gap-2">
+            <DesktopDownloadButton className="hidden sm:inline-flex" />
+            <UserMenu disabled={busy} />
+          </div>
         </div>
       </nav>
       <main className="mx-auto max-w-[1320px] px-4 py-7 sm:px-6">
@@ -210,6 +214,7 @@ export function AdminLayout({ title, subtitle, actions, busy = false, children }
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <DesktopDownloadButton className="hidden sm:inline-flex" />
               <span className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/[0.07] px-2.5 py-1 text-[11px] font-medium text-emerald-300 sm:inline-flex">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Local only
               </span>

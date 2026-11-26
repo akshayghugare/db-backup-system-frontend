@@ -1,5 +1,6 @@
 import { DownloadIcon, LayersIcon, LockIcon, ShieldIcon, UploadIcon, ZapIcon } from "./Icons.jsx";
 import { Alert, BrandMark } from "./ui.jsx";
+import DesktopDownloadButton from "./DesktopDownload.jsx";
 
 const FEATURES = [
   { icon: <LayersIcon size={16} />, title: "Complete copies", text: "Schemas, tables, keys, indexes, sequences and every row." },
@@ -104,6 +105,9 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
             <div className="px-7 pb-7 pt-5">{children}</div>
           </section>
           {footer && <p className="mt-6 animate-fade-in text-center text-[13px] text-muted">{footer}</p>}
+          <p className="mt-3 flex animate-fade-in items-center justify-center gap-1.5 text-[12.5px] text-faint">
+            Restoring into a local database? <DesktopDownloadButton variant="link" label="Get the desktop app" />
+          </p>
         </div>
       </main>
     </div>
