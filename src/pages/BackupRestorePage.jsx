@@ -153,6 +153,7 @@ function BackupRestoreWorkspace() {
   const [connectionIssue, setConnectionIssue] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [notLocalMessage, setNotLocalMessage] = useState(DEFAULT_NOT_LOCAL);
+  const [restoreUnavailable, setRestoreUnavailable] = useState(null);
   const pollRef = useRef(null);
   const statusRef = useRef(null);
 
@@ -164,7 +165,10 @@ function BackupRestoreWorkspace() {
 
   useEffect(() => {
     fetchConfig()
-      .then((config) => setNotLocalMessage(config.restore_not_local_message))
+      .then((config) => {
+        setNotLocalMessage(config.restore_not_local_message);
+        setRestoreUnavailable(config.restore_available === false ? config.restore_unavailable_message : null);
+      })
       .catch(() => undefined);
     getActiveJob()
       .then((data) => {
@@ -348,6 +352,13 @@ function BackupRestoreWorkspace() {
       busy={starting}
     >
       {running && <TopProgress percent={percent} />}
+
+      {restoreUnavailable && (
+        <Alert tone="warning" className="mb-6">
+          <p className="font-semibold text-amber-100">Restore TO your local database is not possible from this server</p>
+          <p className="mt-1 text-amber-200/90">{restoreUnavailable}</p>
+        </Alert>
+      )}
 
       <FlowHero from={from} to={to} mode={mode} selectedCount={selected.size} running={running} percent={percent} />
 
